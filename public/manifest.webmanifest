@@ -1,0 +1,40 @@
+{
+  "name": "AnuBox File Hosting Web",
+  "short_name": "AnuBox Files",
+  "description": "Free, Fast And Permanent File Hosting. Upload Images, Video, Audio And Documents And Get A Permanent Direct Link In Seconds. Files Up To 100 MB, No Account Needed, Encrypted Before They Are Stored.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "en",
+  "categories": ["utilities", "productivity"],
+  "background_color": "#160a12",
+  "theme_color": "#160a12",
+  "icons": [
+    {
+      "src": "/assets/img/icon.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/img/logo.png",
+      "sizes": "500x500",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Upload With AnuBox File Hosting",
+      "short_name": "Upload",
+      "url": "/"
+    },
+    {
+      "name": "API Documentation",
+      "short_name": "API Docs",
+      "url": "/docs"
+    }
+  ]
+}

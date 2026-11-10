@@ -1,0 +1,7 @@
+User-Agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+Host: https://anubox.vercel.app
+Sitemap: https://anubox.vercel.app/sitemap.xml
