@@ -8,7 +8,7 @@ import {
   ChunkRecord,
   checkAdminAuth,
 } from "@/lib/storage";
-import { getFileExt } from "@/lib/utils";
+import { getFileExt, getRequestOrigin } from "@/lib/utils";
 
 function isPrivateIp(hostname: string): boolean {
   if (
@@ -126,7 +126,7 @@ export async function GET(req: NextRequest) {
     }
 
     const fileKey = `${Date.now()}.${ext}`;
-    const origin = req.nextUrl.origin || "https://anubox.vercel.app";
+    const origin = getRequestOrigin(req);
     const fileUrl = `${origin}/${fileKey}`;
 
     const clientIp =

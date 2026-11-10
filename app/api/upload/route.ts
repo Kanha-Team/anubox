@@ -8,7 +8,7 @@ import {
   ChunkRecord,
   checkAdminAuth,
 } from "@/lib/storage";
-import { getFileExt } from "@/lib/utils";
+import { getFileExt, getRequestOrigin } from "@/lib/utils";
 
 export async function POST(req: NextRequest) {
   if (process.env.ENABLE_AUTH === "true" && !checkAdminAuth(req)) {
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 
   const ext = getFileExt(file.name) || "bin";
   const fileKey = `${Date.now()}.${ext}`;
-  const origin = req.nextUrl.origin || "https://anubox.vercel.app";
+  const origin = getRequestOrigin(req);
   const fileUrl = `${origin}/${fileKey}`;
 
   const clientIp =

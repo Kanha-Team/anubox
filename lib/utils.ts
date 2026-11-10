@@ -108,3 +108,17 @@ export async function hashFile(file: File): Promise<string> {
   }
   return hashString(`${file.name}|${file.size}|${file.lastModified}`);
 }
+
+export function getRequestOrigin(req: { headers: { get: (name: string) => string | null }; nextUrl?: { origin?: string } }): string {
+  if (process.env.SITE_URL) return process.env.SITE_URL;
+  const forwardedHost = req.headers.get("x-forwarded-host");
+  const forwardedProto = req.headers.get("x-forwarded-proto") || "https";
+  if (forwardedHost) {
+    return `${forwardedProto}://${forwardedHost}`;
+  }
+  const host = req.headers.get("host");
+  if (host && !host.includes("localhost") && !host.includes("127.0.0.1")) {
+    return `${forwardedProto}://${host}`;
+  }
+  return req.nextUrl?.origin || "https://anubox.vercel.app";
+}

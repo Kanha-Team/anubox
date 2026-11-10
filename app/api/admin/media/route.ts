@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAuth, getDb } from "@/lib/storage";
+import { getRequestOrigin } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   if (!checkAdminAuth(req)) {
@@ -22,8 +23,8 @@ export async function GET(req: NextRequest) {
   const db = getDb();
   const total = db.length;
   const start = (page - 1) * limit;
+  const origin = getRequestOrigin(req);
   const files = db.slice(start, start + limit).map((f) => {
-    const origin = req.nextUrl.origin || "https://anubox.vercel.app";
     return {
       id: f.id,
       url: `${origin}/${f.id}`,
