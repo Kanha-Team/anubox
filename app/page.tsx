@@ -19,7 +19,7 @@ import {
   hashFile,
   hashString,
 } from "@/lib/utils";
-import { creators, specialThanks, githubProfile } from "@/lib/creators";
+import { creators, githubProfile } from "@/lib/creators";
 
 const HISTORY_KEY = "anubox_uploads";
 
@@ -1289,27 +1289,6 @@ export default function HomePage() {
                 </article>
               ))}
             </div>
-            {specialThanks.length > 0 && (
-              <div className="thanks">
-                <p className="thanks-title">
-                  Special Thanks To {specialThanks.map((s) => s.name).join(" & ")} For Helping Me With This Project.
-                </p>
-                <ul className="thanks-links">
-                  {specialThanks.map((s) => (
-                    <li key={s.handle}>
-                      <a
-                        href={githubProfile(s.handle)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={`${s.name} On Github`}
-                      >
-                        <Icon name="github" /> {s.handle}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
         </section>
       </main>

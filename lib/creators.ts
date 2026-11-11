@@ -27,9 +27,4 @@ export const creators: Creator[] = [
   },
 ];
 
-export const specialThanks = [
-  { name: "Anya", handle: "Itz-Anya" },
-  { name: "Murali", handle: "Itz-Murali" },
-];
-
 export const githubProfile = (handle: string) => `https://github.com/${handle}`;
