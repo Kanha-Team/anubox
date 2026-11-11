@@ -27,17 +27,24 @@ export interface FileRecord {
   chunks: ChunkRecord[];
 }
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const DATA_DIR = isServerless ? path.join("/tmp", ".data") : path.join(process.cwd(), ".data");
 const STORAGE_DIR = path.join(DATA_DIR, "chunks");
 const DB_FILE = path.join(DATA_DIR, "db.json");
 
 function ensureDirs() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  if (!fs.existsSync(STORAGE_DIR)) fs.mkdirSync(STORAGE_DIR, { recursive: true });
-  if (!fs.existsSync(DB_FILE)) fs.writeFileSync(DB_FILE, JSON.stringify([]), "utf-8");
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    if (!fs.existsSync(STORAGE_DIR)) fs.mkdirSync(STORAGE_DIR, { recursive: true });
+    if (!fs.existsSync(DB_FILE)) fs.writeFileSync(DB_FILE, JSON.stringify([]), "utf-8");
+  } catch {
+    // Avoid crashing in read-only serverless filesystems
+  }
 }
 
-ensureDirs();
+try {
+  ensureDirs();
+} catch {}
 
 export function getDb(): FileRecord[] {
   try {
@@ -172,10 +179,12 @@ export async function saveChunk(
     if (tgId) telegramFileId = tgId;
   }
 
-  // Always save locally or when TG not available
-  ensureDirs();
-  const chunkPath = path.join(STORAGE_DIR, chunkId);
-  fs.writeFileSync(chunkPath, encrypted);
+  // Save locally or when TG not available
+  try {
+    ensureDirs();
+    const chunkPath = path.join(STORAGE_DIR, chunkId);
+    fs.writeFileSync(chunkPath, encrypted);
+  } catch {}
 
   return { iv, tag, telegramFileId };
 }
