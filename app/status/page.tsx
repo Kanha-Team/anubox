@@ -71,11 +71,11 @@ export default function StatusPage() {
               <span>Telegram Bot</span>
               <i>
                 <a
-                  href="https://t.me/AnuBoxBot"
+                  href="https://t.me/meowcloner"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  @AnuBoxBot
+                  @meowcloner
                 </a>
               </i>
             </div>

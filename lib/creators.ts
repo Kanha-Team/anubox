@@ -19,8 +19,8 @@ export const creators: Creator[] = [
     handle: "Hackerbhai03",
     img: "/assets/img/creators.jpg",
     socials: [
-      { icon: "send", label: "Telegram", href: "https://t.me/KingxAra" },
-      { icon: "bot", label: "Bot", href: "https://t.me/AnuBoxBot" },
+      { icon: "send", label: "@xoknha", href: "https://t.me/xoknha" },
+      { icon: "bot", label: "@meowcloner", href: "https://t.me/meowcloner" },
     ],
   },
 ];

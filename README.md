@@ -12,7 +12,7 @@ Upload Images, Videos, Audio, and Documents and get a permanent direct link in s
 [![Next.js](https://img.shields.io/badge/Next.js-14-black.svg?style=for-the-badge&logo=next.js)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React-18-blue.svg?style=for-the-badge&logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org)
-[![Telegram](https://img.shields.io/badge/Telegram-@KingxAra-2CA5E0.svg?style=for-the-badge&logo=telegram)](https://t.me/KingxAra)
+[![Telegram](https://img.shields.io/badge/Telegram-@xoknha-2CA5E0.svg?style=for-the-badge&logo=telegram)](https://t.me/xoknha)
 
 </div>
 
@@ -92,7 +92,7 @@ npm start
 ## 👨‍💻 Creator
 
 - **Ayush (Kanha)** — [@Hackerbhai03](https://github.com/Hackerbhai03)
-- **Telegram**: [@KingxAra](https://t.me/KingxAra)
+- **Telegram**: [@xoknha](https://t.me/xoknha)
 
 ---
 
