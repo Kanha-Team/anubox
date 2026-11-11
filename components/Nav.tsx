@@ -73,7 +73,7 @@ export function ThemeToggle() {
 export function Brand({ sub }: { sub?: string }) {
   return (
     <Link className="brand" href="/" aria-label="AnuBox || File Hosting Home">
-      <img src="/assets/img/icon.png" width="34" height="34" alt="" />
+      <img src="/assets/img/icon.jpg" width="34" height="34" alt="" />
       <span className="brand-name">AnuBox || File Hosting</span>
       {sub && <span className="brand-tag">{sub}</span>}
     </Link>

@@ -50,9 +50,9 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/assets/img/icon.png",
-    shortcut: "/assets/img/icon.png",
-    apple: "/assets/img/icon.png",
+    icon: "/assets/img/icon.jpg",
+    shortcut: "/assets/img/icon.jpg",
+    apple: "/assets/img/icon.jpg",
   },
   openGraph: {
     title: "AnuBox File Hosting Web: Free, Fast And Permanent File Hosting",
@@ -64,11 +64,11 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/assets/img/logo.png",
+        url: "/assets/img/logo.jpg",
         width: 500,
         height: 500,
         alt: "AnuBox File Hosting Web Logo: A Pink-Haired Girl Beside A Cloud Upload Folder.",
-        type: "image/png",
+        type: "image/jpeg",
       },
     ],
   },
@@ -77,7 +77,7 @@ export const metadata: Metadata = {
     title: "AnuBox File Hosting Web: Free, Fast And Permanent File Hosting",
     description:
       "Upload Images, Video, Audio And Documents And Get A Permanent Direct Link In Seconds. Files Up To 100 MB, No Account Needed, Encrypted Before They Are Stored.",
-    images: ["/assets/img/logo.png"],
+    images: ["/assets/img/logo.jpg"],
   },
 };
 
@@ -89,8 +89,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="preload" as="image" href="/assets/img/icon.png" />
-        <link rel="preload" as="image" href="/assets/img/logo.png" />
+        <link rel="preload" as="image" href="/assets/img/icon.jpg" />
+        <link rel="preload" as="image" href="/assets/img/logo.jpg" />
       </head>
       <body>
         <Toasts />

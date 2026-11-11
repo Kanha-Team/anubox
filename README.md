@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![AnuBox Logo](public/assets/img/logo.png)
+![AnuBox Logo](public/assets/img/logo.jpg)
 
 ### Free, Fast And Permanent File Hosting
 

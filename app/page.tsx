@@ -835,7 +835,7 @@ export default function HomePage() {
               <div className="hero-art" aria-hidden="true">
                 <img
                   ref={logoArtRef}
-                  src="/assets/img/logo.png"
+                  src="/assets/img/logo.jpg"
                   alt=""
                   width="420"
                   height="420"
@@ -1208,7 +1208,7 @@ export default function HomePage() {
         <section className="section" aria-labelledby="cta-h">
           <div className="wrap">
             <div className="cta">
-              <img src="/assets/img/icon.png" alt="" width="72" height="72" />
+              <img src="/assets/img/icon.jpg" alt="" width="72" height="72" />
               <div>
                 <h2 id="cta-h">Got A File? Get A Link.</h2>
                 <p>It Takes A Few Seconds And You Do Not Need An Account.</p>

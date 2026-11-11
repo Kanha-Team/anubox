@@ -80,7 +80,7 @@ export default function AdminLoginPage() {
           >
             <img
               className="login-logo"
-              src="/assets/img/icon.png"
+              src="/assets/img/icon.jpg"
               alt=""
               width="56"
               height="56"

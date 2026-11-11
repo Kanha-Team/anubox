@@ -22,7 +22,7 @@ export function Footer() {
     <footer className="foot">
       <div className="wrap foot-in">
         <span className="foot-brand">
-          <img src="/assets/img/icon.png" alt="" width="24" height="24" />
+          <img src="/assets/img/icon.jpg" alt="" width="24" height="24" />
           <span suppressHydrationWarning>
             © {new Date().getFullYear()} AnuBox File Hosting. Your Files Stay Encrypted.
           </span>

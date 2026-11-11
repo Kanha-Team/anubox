@@ -20,7 +20,7 @@ export default function NotFound() {
         <div className="wrap lost-in rise">
           <img
             className="lost-logo"
-            src="/assets/img/logo.png"
+            src="/assets/img/logo.jpg"
             alt=""
             width="140"
             height="140"
