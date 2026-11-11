@@ -20,8 +20,6 @@ export const creators: Creator[] = [
     img: "/assets/img/creators.jpg",
     socials: [
       { icon: "send", label: "Telegram", href: "https://t.me/KingxAra" },
-      { icon: "instagram", label: "Instagram", href: "https://instagram.com/careless__02" },
-      { icon: "globe", label: "Portfolio", href: "https://raushan-pal.vercel.app" },
       { icon: "bot", label: "Bot", href: "https://t.me/AnuBoxBot" },
     ],
   },
