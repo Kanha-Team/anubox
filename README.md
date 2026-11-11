@@ -91,7 +91,7 @@ npm start
 
 ## 👨‍💻 Creator
 
-- **Ayush (Kanha)** — [@Hackerbhai03](https://github.com/Hackerbhai03)
+- **Ayush (Kanha)** — [@Kanha-Team](https://github.com/Kanha-Team)
 - **Telegram**: [@xoknha](https://t.me/xoknha)
 
 ---

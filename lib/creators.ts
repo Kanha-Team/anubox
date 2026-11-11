@@ -16,7 +16,7 @@ export const creators: Creator[] = [
     key: "ayush",
     plain: "Ayush",
     name: "Ayush (Kanha)",
-    handle: "Hackerbhai03",
+    handle: "Kanha-Team",
     img: "/assets/img/creators.jpg",
     socials: [
       { icon: "send", label: "@xoknha", href: "https://t.me/xoknha" },
