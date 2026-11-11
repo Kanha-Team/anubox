@@ -51,7 +51,13 @@ export function getDb(): FileRecord[] {
 
 export function saveDb(records: FileRecord[]) {
   ensureDirs();
-  fs.writeFileSync(DB_FILE, JSON.stringify(records, null, 2), "utf-8");
+  const tempFile = `${DB_FILE}.${Date.now()}.${Math.random().toString(36).substring(2)}.tmp`;
+  try {
+    fs.writeFileSync(tempFile, JSON.stringify(records, null, 2), "utf-8");
+    fs.renameSync(tempFile, DB_FILE);
+  } catch {
+    fs.writeFileSync(DB_FILE, JSON.stringify(records, null, 2), "utf-8");
+  }
 }
 
 export function getFileRecord(id: string): FileRecord | undefined {
@@ -195,11 +201,27 @@ export async function readChunk(chunk: ChunkRecord): Promise<Buffer> {
   return decryptBuffer(encryptedBuf, chunk.iv, chunk.tag);
 }
 
-// Temporary in-flight chunk upload cache
-const inFlightChunks = new Map<string, { buffer: Buffer; hash: string }>();
+// Temporary in-flight chunk upload cache with auto-expiration
+interface TempChunk {
+  buffer: Buffer;
+  hash: string;
+  createdAt: number;
+}
+const inFlightChunks = new Map<string, TempChunk>();
+
+function pruneTempChunks() {
+  const now = Date.now();
+  const maxAge = 30 * 60 * 1000; // 30 minutes
+  inFlightChunks.forEach((value, key) => {
+    if (now - value.createdAt > maxAge) {
+      inFlightChunks.delete(key);
+    }
+  });
+}
 
 export function storeTempChunk(uploadId: string, index: number, buffer: Buffer, hash: string) {
-  inFlightChunks.set(`${uploadId}-${index}`, { buffer, hash });
+  pruneTempChunks();
+  inFlightChunks.set(`${uploadId}-${index}`, { buffer, hash, createdAt: Date.now() });
 }
 
 export function getTempChunk(uploadId: string, index: number) {

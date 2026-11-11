@@ -33,11 +33,7 @@ interface HistoryItem {
 function getStoredHistory(): HistoryItem[] {
   if (typeof window === "undefined") return [];
   try {
-    let raw = localStorage.getItem(HISTORY_KEY);
-    if (!raw) {
-      raw = localStorage.getItem("anya_uploads") || localStorage.getItem("chiku_uploads");
-      if (raw) localStorage.setItem(HISTORY_KEY, raw);
-    }
+    const raw = localStorage.getItem(HISTORY_KEY);
     const parsed = JSON.parse(raw || "[]");
     return Array.isArray(parsed) ? parsed : [];
   } catch {

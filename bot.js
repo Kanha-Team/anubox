@@ -10,11 +10,6 @@
  * 3. Run: npm run bot
  */
 
-import http from "http";
-import https from "https";
-import fs from "fs";
-import path from "path";
-
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const SITE_URL =
   process.env.SITE_URL ||

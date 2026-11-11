@@ -26,8 +26,7 @@ export function ThemeToggle() {
 
   useEffect(() => {
     try {
-      const stored = (localStorage.getItem(THEME_KEY) ||
-        localStorage.getItem("anya_theme")) as ThemeMode;
+      const stored = localStorage.getItem(THEME_KEY) as ThemeMode;
       if (stored === "light" || stored === "dark") {
         setTheme(stored);
         document.documentElement.setAttribute("data-theme", stored);

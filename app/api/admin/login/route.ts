@@ -26,12 +26,16 @@ export async function POST(req: NextRequest) {
       }
     );
 
+    const isHttps =
+      req.nextUrl.protocol === "https:" ||
+      req.headers.get("x-forwarded-proto") === "https";
+
     res.cookies.set("anubox_session", "authenticated", {
       path: "/",
       httpOnly: true,
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7, // 7 days
-      secure: process.env.NODE_ENV === "production",
+      secure: isHttps,
     });
 
     return res;

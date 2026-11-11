@@ -26,13 +26,10 @@ function isPrivateIp(hostname: string): boolean {
   return false;
 }
 
-export async function GET(req: NextRequest) {
+async function handleHostUrl(req: NextRequest, targetUrl: string | null) {
   if (process.env.ENABLE_AUTH === "true" && !checkAdminAuth(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  const { searchParams } = new URL(req.url);
-  const targetUrl = searchParams.get("url");
 
   if (!targetUrl) {
     return NextResponse.json(
@@ -171,4 +168,37 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const targetUrl = searchParams.get("url");
+  return handleHostUrl(req, targetUrl);
+}
+
+export async function POST(req: NextRequest) {
+  let targetUrl: string | null = null;
+  const contentType = req.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    try {
+      const body = await req.json();
+      targetUrl = body?.url || null;
+    } catch {}
+  } else if (
+    contentType.includes("multipart/form-data") ||
+    contentType.includes("application/x-www-form-urlencoded")
+  ) {
+    try {
+      const formData = await req.formData();
+      targetUrl = (formData.get("url") as string) || null;
+    } catch {}
+  }
+
+  if (!targetUrl) {
+    const { searchParams } = new URL(req.url);
+    targetUrl = searchParams.get("url");
+  }
+
+  return handleHostUrl(req, targetUrl);
 }

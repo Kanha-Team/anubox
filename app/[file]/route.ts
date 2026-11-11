@@ -25,6 +25,10 @@ export async function GET(
   const range = req.headers.get("range");
 
   try {
+    if (!record.chunks || record.chunks.length === 0) {
+      return new NextResponse("File Has No Content", { status: 404 });
+    }
+
     // Read and decrypt all chunks to reconstruct buffer
     const buffers: Buffer[] = [];
     for (const chunk of record.chunks) {
@@ -34,22 +38,18 @@ export async function GET(
     const fullBuffer = Buffer.concat(buffers);
     const totalLength = fullBuffer.length;
 
+    const cleanFilename = (record.filename || fileParam).replace(/[\r\n]/g, "");
+    const safeFilename = cleanFilename.replace(/["\\]/g, "_");
+    const encodedFilename = encodeURIComponent(cleanFilename);
+    const disposition = isDangerous ? "attachment" : "inline";
+
     const baseHeaders: Record<string, string> = {
       "Content-Type": record.media_type || "application/octet-stream",
       "Accept-Ranges": "bytes",
       "x-powered-by": "AnuBox File Hosting",
       "Cache-Control": "public, max-age=31536000, immutable",
+      "Content-Disposition": `${disposition}; filename="${safeFilename}"; filename*=UTF-8''${encodedFilename}`,
     };
-
-    if (isDangerous) {
-      baseHeaders["Content-Disposition"] = `attachment; filename="${encodeURIComponent(
-        record.filename
-      )}"`;
-    } else {
-      baseHeaders["Content-Disposition"] = `inline; filename="${encodeURIComponent(
-        record.filename
-      )}"`;
-    }
 
     if (range) {
       const parts = range.replace(/bytes=/, "").split("-");
