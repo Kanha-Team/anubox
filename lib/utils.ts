@@ -64,6 +64,54 @@ export function getMediaType(ext: string): "image" | "video" | "audio" | "file" 
   return "file";
 }
 
+const MIME_MAP: Record<string, string> = {
+  // Images
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+  svg: "image/svg+xml",
+  avif: "image/avif",
+  bmp: "image/bmp",
+  ico: "image/x-icon",
+  tiff: "image/tiff",
+  tif: "image/tiff",
+  // Video
+  mp4: "video/mp4",
+  webm: "video/webm",
+  mkv: "video/x-matroska",
+  mov: "video/quicktime",
+  avi: "video/x-msvideo",
+  flv: "video/x-flv",
+  m4v: "video/x-m4v",
+  // Audio
+  mp3: "audio/mpeg",
+  ogg: "audio/ogg",
+  wav: "audio/wav",
+  m4a: "audio/mp4",
+  flac: "audio/flac",
+  aac: "audio/aac",
+  opus: "audio/opus",
+  // Documents & Data
+  pdf: "application/pdf",
+  txt: "text/plain; charset=utf-8",
+  json: "application/json",
+  xml: "application/xml",
+  csv: "text/csv",
+  // Archives
+  zip: "application/zip",
+  rar: "application/x-rar-compressed",
+  "7z": "application/x-7z-compressed",
+  tar: "application/x-tar",
+  gz: "application/gzip",
+};
+
+export function getMimeType(filenameOrExt: string): string {
+  const ext = getFileExt(filenameOrExt);
+  return MIME_MAP[ext] || "application/octet-stream";
+}
+
 export function formatCodeLink(kind: string, url: string, name?: string): string {
   const title = name || String(url).split("?")[0].split("/").pop() || "File";
   const isImg = getMediaType(getFileExt(url)) === "image";

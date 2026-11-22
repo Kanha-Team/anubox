@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminAuth, getDb } from "@/lib/storage";
+import { checkAdminAuth, getDbRecords } from "@/lib/storage";
 import { getRequestOrigin } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
   const limit = Math.max(1, Math.min(200, parseInt(searchParams.get("limit") || "100", 10)));
 
-  const db = getDb();
+  const db = await getDbRecords();
   const total = db.length;
   const start = (page - 1) * limit;
   const origin = getRequestOrigin(req);

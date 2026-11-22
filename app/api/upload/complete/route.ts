@@ -3,13 +3,12 @@ import {
   getTempChunk,
   removeTempChunk,
   saveChunk,
-  getDb,
-  saveDb,
+  addFileRecord,
   FileRecord,
   ChunkRecord,
   checkAdminAuth,
 } from "@/lib/storage";
-import { getFileExt, getRequestOrigin } from "@/lib/utils";
+import { getFileExt, getMimeType, getRequestOrigin } from "@/lib/utils";
 
 export async function POST(req: NextRequest) {
   if (process.env.ENABLE_AUTH === "true" && !checkAdminAuth(req)) {
@@ -80,20 +79,23 @@ export async function POST(req: NextRequest) {
   const origin = getRequestOrigin(req);
   const fileUrl = `${origin}/${fileKey}`;
 
+  let mediaType = type;
+  if (!mediaType || mediaType === "application/octet-stream") {
+    mediaType = getMimeType(name);
+  }
+
   const record: FileRecord = {
     id: fileKey,
     filename: name,
     size: totalSize,
-    media_type: type || "application/octet-stream",
+    media_type: mediaType,
     uploaded_on: new Date().toISOString(),
     ip: clientIp,
     meta,
     chunks: savedChunks,
   };
 
-  const db = getDb();
-  db.unshift(record);
-  saveDb(db);
+  await addFileRecord(record);
 
   return NextResponse.json(
     {

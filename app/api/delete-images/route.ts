@@ -32,7 +32,7 @@ async function handleDelete(req: NextRequest) {
     const raw = typeof item === "string" ? item : item?.url || item?.id;
     if (!raw) continue;
     const id = raw.split("?")[0].split("/").filter(Boolean).pop();
-    if (id && deleteFileRecord(id)) {
+    if (id && (await deleteFileRecord(id))) {
       deleted.push(id);
     }
   }

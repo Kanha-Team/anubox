@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import {
   saveChunk,
-  getDb,
-  saveDb,
+  addFileRecord,
   FileRecord,
   ChunkRecord,
   checkAdminAuth,
 } from "@/lib/storage";
-import { getFileExt, getRequestOrigin } from "@/lib/utils";
+import { getFileExt, getMimeType, getRequestOrigin } from "@/lib/utils";
 
 function isPrivateIp(hostname: string): boolean {
   if (
@@ -131,19 +130,22 @@ async function handleHostUrl(req: NextRequest, targetUrl: string | null) {
       req.headers.get("x-real-ip") ||
       "127.0.0.1";
 
+    let mediaType = contentType;
+    if (!mediaType || mediaType === "application/octet-stream") {
+      mediaType = getMimeType(originalName);
+    }
+
     const record: FileRecord = {
       id: fileKey,
       filename: originalName,
       size: fileBuffer.length,
-      media_type: contentType,
+      media_type: mediaType,
       uploaded_on: new Date().toISOString(),
       ip: clientIp,
       chunks: savedChunks,
     };
 
-    const db = getDb();
-    db.unshift(record);
-    saveDb(db);
+    await addFileRecord(record);
 
     return NextResponse.json(
       {

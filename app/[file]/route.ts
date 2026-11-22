@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFileRecord, readChunk } from "@/lib/storage";
-import { getFileExt } from "@/lib/utils";
+import { getFileExt, getMimeType } from "@/lib/utils";
 
 const DANGEROUS_EXTENSIONS = ["html", "htm", "js", "mjs", "css", "xml", "svg"];
 
@@ -13,13 +13,18 @@ export async function GET(
     return new NextResponse("File Not Found", { status: 404 });
   }
 
-  const record = getFileRecord(fileParam);
+  const record = await getFileRecord(fileParam);
   if (!record) {
     return new NextResponse("File Not Found", { status: 404 });
   }
 
   const ext = getFileExt(record.filename || fileParam);
   const isDangerous = DANGEROUS_EXTENSIONS.includes(ext);
+
+  let contentType = record.media_type;
+  if (!contentType || contentType === "application/octet-stream") {
+    contentType = getMimeType(record.filename || fileParam);
+  }
 
   // Check Range Header
   const range = req.headers.get("range");
@@ -44,7 +49,7 @@ export async function GET(
     const disposition = isDangerous ? "attachment" : "inline";
 
     const baseHeaders: Record<string, string> = {
-      "Content-Type": record.media_type || "application/octet-stream",
+      "Content-Type": contentType,
       "Accept-Ranges": "bytes",
       "x-powered-by": "AnuBox File Hosting",
       "Cache-Control": "public, max-age=31536000, immutable",

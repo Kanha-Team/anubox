@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import { MongoClient } from "mongodb";
 
 export interface ChunkRecord {
   id: string;
@@ -31,6 +32,25 @@ const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTI
 const DATA_DIR = isServerless ? path.join("/tmp", ".data") : path.join(process.cwd(), ".data");
 const STORAGE_DIR = path.join(DATA_DIR, "chunks");
 const DB_FILE = path.join(DATA_DIR, "db.json");
+
+// MongoDB connection cache
+const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_DB_URI;
+let mongoClient: MongoClient | null = null;
+
+async function getMongoCollection() {
+  if (!MONGO_URI) return null;
+  try {
+    if (!mongoClient) {
+      mongoClient = new MongoClient(MONGO_URI);
+      await mongoClient.connect();
+    }
+    const dbName = process.env.MONGO_DB_NAME || "anubox";
+    return mongoClient.db(dbName).collection<FileRecord>("files");
+  } catch (err) {
+    console.error("MongoDB connection error:", err);
+    return null;
+  }
+}
 
 function ensureDirs() {
   try {
@@ -67,29 +87,99 @@ export function saveDb(records: FileRecord[]) {
   }
 }
 
-export function getFileRecord(id: string): FileRecord | undefined {
+export async function addFileRecord(record: FileRecord): Promise<void> {
+  const col = await getMongoCollection();
+  if (col) {
+    try {
+      await col.updateOne({ id: record.id }, { $set: record }, { upsert: true });
+    } catch (err) {
+      console.error("MongoDB save error:", err);
+    }
+  }
   const db = getDb();
-  return db.find((r) => r.id === id || r.id === `${id}`);
+  db.unshift(record);
+  saveDb(db);
 }
 
-export function deleteFileRecord(id: string): boolean {
-  const db = getDb();
-  const file = db.find((r) => r.id === id);
-  if (!file) return false;
-
-  // Clean local chunks if present
-  for (const c of file.chunks) {
-    const chunkPath = path.join(STORAGE_DIR, c.id);
-    if (fs.existsSync(chunkPath)) {
-      try {
-        fs.unlinkSync(chunkPath);
-      } catch {}
+export async function getFileRecord(id: string): Promise<FileRecord | undefined> {
+  const baseId = id.split(".")[0];
+  const col = await getMongoCollection();
+  if (col) {
+    try {
+      const rec = await col.findOne({
+        $or: [
+          { id: id },
+          { id: { $regex: `^${baseId}(\\..*)?$` } },
+          { filename: id },
+        ],
+      });
+      if (rec) return rec as FileRecord;
+    } catch (err) {
+      console.error("MongoDB lookup error:", err);
     }
   }
 
-  const filtered = db.filter((r) => r.id !== id);
-  saveDb(filtered);
-  return true;
+  const db = getDb();
+  return db.find(
+    (r) =>
+      r.id === id ||
+      r.id === `${id}` ||
+      r.id.split(".")[0] === baseId ||
+      r.filename === id
+  );
+}
+
+export async function getDbRecords(): Promise<FileRecord[]> {
+  const col = await getMongoCollection();
+  if (col) {
+    try {
+      const records = await col.find().sort({ uploaded_on: -1 }).toArray();
+      return records as FileRecord[];
+    } catch (err) {
+      console.error("MongoDB getDbRecords error:", err);
+    }
+  }
+  return getDb();
+}
+
+export async function deleteFileRecord(id: string): Promise<boolean> {
+  const baseId = id.split(".")[0];
+  let deleted = false;
+  const col = await getMongoCollection();
+  if (col) {
+    try {
+      const res = await col.deleteOne({
+        $or: [
+          { id: id },
+          { id: { $regex: `^${baseId}(\\..*)?$` } },
+        ],
+      });
+      if (res.deletedCount && res.deletedCount > 0) {
+        deleted = true;
+      }
+    } catch (err) {
+      console.error("MongoDB delete error:", err);
+    }
+  }
+
+  const db = getDb();
+  const file = db.find((r) => r.id === id || r.id.split(".")[0] === baseId);
+  if (file) {
+    // Clean local chunks if present
+    for (const c of file.chunks) {
+      const chunkPath = path.join(STORAGE_DIR, c.id);
+      if (fs.existsSync(chunkPath)) {
+        try {
+          fs.unlinkSync(chunkPath);
+        } catch {}
+      }
+    }
+    const filtered = db.filter((r) => r.id !== id && r.id.split(".")[0] !== baseId);
+    saveDb(filtered);
+    deleted = true;
+  }
+
+  return deleted;
 }
 
 // AES-256-GCM Encryption

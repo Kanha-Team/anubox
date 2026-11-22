@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import {
   saveChunk,
-  getDb,
-  saveDb,
+  addFileRecord,
   FileRecord,
   ChunkRecord,
   checkAdminAuth,
 } from "@/lib/storage";
-import { getFileExt, getRequestOrigin } from "@/lib/utils";
+import { getFileExt, getMimeType, getRequestOrigin } from "@/lib/utils";
 
 export async function POST(req: NextRequest) {
   if (process.env.ENABLE_AUTH === "true" && !checkAdminAuth(req)) {
@@ -94,19 +93,22 @@ export async function POST(req: NextRequest) {
     req.headers.get("x-real-ip") ||
     "127.0.0.1";
 
+  let mediaType = file.type;
+  if (!mediaType || mediaType === "application/octet-stream") {
+    mediaType = getMimeType(file.name);
+  }
+
   const record: FileRecord = {
     id: fileKey,
     filename: file.name,
     size: fileBuffer.length,
-    media_type: file.type || "application/octet-stream",
+    media_type: mediaType,
     uploaded_on: new Date().toISOString(),
     ip: clientIp,
     chunks: savedChunks,
   };
 
-  const db = getDb();
-  db.unshift(record);
-  saveDb(db);
+  await addFileRecord(record);
 
   return NextResponse.json(
     {
