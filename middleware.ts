@@ -77,26 +77,20 @@ function verifyBasicAuth(authHeader: string | null): boolean {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Protect Admin Dashboard UI (/admin and /admin/* except /admin/login)
-  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
-    const sessionCookie = req.cookies.get("anubox_session")?.value;
-    const isValid = await verifyEdgeToken(sessionCookie);
-
-    if (!isValid) {
-      const loginUrl = new URL("/admin/login", req.url);
-      loginUrl.searchParams.set("next", pathname + req.nextUrl.search);
-      const res = NextResponse.redirect(loginUrl);
-      // Clear any invalid/forged cookie
-      res.cookies.delete("anubox_session");
-      return res;
-    }
-  }
-
-  // Protect Admin API routes (/api/admin/* except /api/admin/login)
+  // Protect Admin API routes - validates Bearer token or Basic auth in headers (NO COOKIES)
   if (pathname.startsWith("/api/admin") && pathname !== "/api/admin/login") {
-    const sessionCookie = req.cookies.get("anubox_session")?.value;
-    const isTokenValid = await verifyEdgeToken(sessionCookie);
-    const isBasicValid = verifyBasicAuth(req.headers.get("authorization"));
+    const authHeader = req.headers.get("authorization");
+    const xToken = req.headers.get("x-admin-token");
+    let token: string | undefined;
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.slice(7).trim();
+    } else if (xToken) {
+      token = xToken.trim();
+    }
+
+    const isTokenValid = await verifyEdgeToken(token);
+    const isBasicValid = verifyBasicAuth(authHeader);
 
     if (!isTokenValid && !isBasicValid) {
       return NextResponse.json(
@@ -124,7 +118,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/admin/:path*",
     "/api/admin/:path*",
     "/api/delete-images",
   ],

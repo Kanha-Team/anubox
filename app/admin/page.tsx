@@ -28,15 +28,36 @@ export default function AdminDashboardPage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [deleting, setDeleting] = useState(false);
 
+  const getAdminToken = () => {
+    if (typeof window === "undefined") return null;
+    return sessionStorage.getItem("anubox_admin_token");
+  };
+
   useEffect(() => {
-    fetchFiles();
+    const token = getAdminToken();
+    if (!token) {
+      router.replace("/admin/login?next=/admin");
+      return;
+    }
+    fetchFiles(token);
   }, []);
 
-  async function fetchFiles() {
+  async function fetchFiles(explicitToken?: string) {
+    const token = explicitToken || getAdminToken();
+    if (!token) {
+      router.replace("/admin/login?next=/admin");
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/media?limit=100");
+      const res = await fetch("/api/admin/media?limit=100", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (res.status === 401) {
+        sessionStorage.removeItem("anubox_admin_token");
         router.replace("/admin/login?next=/admin");
         return;
       }
@@ -50,6 +71,7 @@ export default function AdminDashboardPage() {
   }
 
   async function handleLogout() {
+    sessionStorage.removeItem("anubox_admin_token");
     await fetch("/api/admin/logout", { method: "POST" });
     router.replace("/admin/login");
     router.refresh();
@@ -59,11 +81,20 @@ export default function AdminDashboardPage() {
     if (!ids.length) return;
     if (!confirm(`Are you sure you want to delete ${ids.length} file(s)?`)) return;
 
+    const token = getAdminToken();
+    if (!token) {
+      router.replace("/admin/login?next=/admin");
+      return;
+    }
+
     setDeleting(true);
     try {
       const res = await fetch("/api/delete-images", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(ids),
       });
       const data = await res.json();
@@ -157,7 +188,7 @@ export default function AdminDashboardPage() {
               <button
                 type="button"
                 className="btn btn-ghost btn-sm"
-                onClick={fetchFiles}
+                onClick={() => fetchFiles()}
               >
                 <Icon name="refresh" /> Refresh
               </button>

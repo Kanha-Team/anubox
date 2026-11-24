@@ -55,8 +55,12 @@ export async function POST(req: NextRequest) {
 
     const token = createSessionToken(adminUser);
 
-    const res = NextResponse.json(
-      { success: true },
+    // Direct token response - NO COOKIES SET
+    return NextResponse.json(
+      {
+        success: true,
+        token,
+      },
       {
         headers: {
           "x-powered-by": "AnuBox File Hosting",
@@ -64,20 +68,6 @@ export async function POST(req: NextRequest) {
         },
       }
     );
-
-    const isHttps =
-      req.nextUrl.protocol === "https:" ||
-      req.headers.get("x-forwarded-proto") === "https";
-
-    res.cookies.set("anubox_session", token, {
-      path: "/",
-      httpOnly: true,
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      secure: isHttps,
-    });
-
-    return res;
   }
 
   recordFailedLogin(clientIp);

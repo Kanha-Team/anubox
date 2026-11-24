@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import * as crypto from "crypto";
 
 // Secret for HMAC signing of session tokens
 const KEY_SECRET =
@@ -101,37 +101,32 @@ export function verifySessionToken(token: string | null | undefined): {
 }
 
 /**
- * Parse anubox_session from the Cookie header
- */
-export function extractSessionCookie(cookieHeader: string | null | undefined): string | null {
-  if (!cookieHeader) return null;
-  const cookies = cookieHeader.split(";");
-  for (const c of cookies) {
-    const [rawName, ...rawVal] = c.trim().split("=");
-    if (rawName === "anubox_session") {
-      return rawVal.join("=");
-    }
-  }
-  return null;
-}
-
-/**
- * Backend check for admin authentication:
- * Validates either a cryptographically signed cookie OR HTTP Basic Auth
+ * Direct Backend Admin Authentication:
+ * NO COOKIES. Validates via Authorization header (Bearer <token> or Basic <base64>)
+ * or x-admin-token header.
  */
 export function checkAdminAuth(req: Request): boolean {
-  // 1. Check Cryptographic Session Cookie
-  const cookieHeader = req.headers.get("cookie");
-  const sessionToken = extractSessionCookie(cookieHeader);
-  if (sessionToken) {
-    const verification = verifySessionToken(sessionToken);
+  const authHeader = req.headers.get("authorization");
+  const xToken = req.headers.get("x-admin-token");
+
+  // 1. Check Bearer Token in Authorization header
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.slice(7).trim();
+    const verification = verifySessionToken(token);
     if (verification.valid) {
       return true;
     }
   }
 
-  // 2. Check Basic Auth (timing-safe)
-  const authHeader = req.headers.get("authorization");
+  // 2. Check x-admin-token header
+  if (xToken) {
+    const verification = verifySessionToken(xToken.trim());
+    if (verification.valid) {
+      return true;
+    }
+  }
+
+  // 3. Check Basic Auth (timing-safe)
   if (authHeader && authHeader.startsWith("Basic ")) {
     try {
       const b64 = authHeader.slice(6);
@@ -172,7 +167,7 @@ export function recordFailedLogin(ip: string): void {
   const now = Date.now();
   const record = loginRateLimit.get(ip) || { attempts: 0, lockedUntil: now + 15 * 60 * 1000 };
   record.attempts += 1;
-  record.lockedUntil = now + 15 * 60 * 1000; // Lock for 15 minutes
+  record.lockedUntil = now + 15 * 60 * 1000;
   loginRateLimit.set(ip, record);
 }
 

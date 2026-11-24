@@ -49,6 +49,10 @@ export default function AdminLoginPage() {
         throw new Error(json.error || "Sign In Failed. Please Try Again.");
       }
 
+      if (json.token) {
+        sessionStorage.setItem("anubox_admin_token", json.token);
+      }
+
       const nextParam = new URLSearchParams(window.location.search).get("next");
       const dest =
         typeof nextParam === "string" &&
