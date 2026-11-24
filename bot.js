@@ -77,6 +77,10 @@ async function pollUpdates() {
   setImmediate(pollUpdates);
 }
 
+const ADMIN_USER = process.env.ADMIN_USERNAME || process.env.USERNAME || "admin";
+const ADMIN_PASS = process.env.ADMIN_PASSWORD || process.env.PASSWORD || "admin123";
+const AUTH_HEADER = "Basic " + Buffer.from(`${ADMIN_USER}:${ADMIN_PASS}`).toString("base64");
+
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
   const text = msg.text || "";
@@ -101,7 +105,12 @@ async function handleMessage(msg) {
     await sendMessage(chatId, "⏳ <i>Importing your link to AnuBox...</i>");
     try {
       const res = await fetch(
-        `${SITE_URL}/api/hosturl?url=${encodeURIComponent(text.trim())}`
+        `${SITE_URL}/api/hosturl?url=${encodeURIComponent(text.trim())}`,
+        {
+          headers: {
+            Authorization: AUTH_HEADER,
+          },
+        }
       );
       const data = await res.json();
       if (res.ok && (data.url || data.data)) {
@@ -160,9 +169,14 @@ async function handleMessage(msg) {
         );
       }
 
-      // Import via hosturl
+      // Import via hosturl with auth support
       const res = await fetch(
-        `${SITE_URL}/api/hosturl?url=${encodeURIComponent(downloadUrl)}`
+        `${SITE_URL}/api/hosturl?url=${encodeURIComponent(downloadUrl)}`,
+        {
+          headers: {
+            Authorization: AUTH_HEADER,
+          },
+        }
       );
       const data = await res.json();
       if (res.ok && (data.url || data.data)) {

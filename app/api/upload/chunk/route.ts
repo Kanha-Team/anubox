@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { storeTempChunk, checkAdminAuth } from "@/lib/storage";
+import { storeTempChunk, saveChunk, checkAdminAuth } from "@/lib/storage";
 
 export async function POST(req: NextRequest) {
   if (process.env.ENABLE_AUTH === "true" && !checkAdminAuth(req)) {
@@ -45,6 +45,10 @@ export async function POST(req: NextRequest) {
   const hash = crypto.createHash("sha256").update(buffer).digest("hex");
   const chunkId = `${uploadId}-${chunkIndex}`;
 
+  // Encrypt and persist chunk immediately
+  const { iv, tag, telegramFileId } = await saveChunk(buffer, chunkId);
+
+  // Also cache in memory for backwards compatibility
   storeTempChunk(uploadId, chunkIndex, buffer, hash);
 
   return NextResponse.json(
@@ -53,6 +57,9 @@ export async function POST(req: NextRequest) {
       index: chunkIndex,
       size: buffer.length,
       hash,
+      iv,
+      tag,
+      telegramFileId,
       fileName: fileName ? decodeURIComponent(fileName) : undefined,
     },
     {

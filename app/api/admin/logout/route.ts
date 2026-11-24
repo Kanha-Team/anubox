@@ -14,6 +14,8 @@ export async function POST() {
   res.cookies.set("anubox_session", "", {
     path: "/",
     httpOnly: true,
+    sameSite: "lax",
+    expires: new Date(0),
     maxAge: 0,
   });
 

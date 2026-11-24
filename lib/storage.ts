@@ -33,21 +33,30 @@ const DATA_DIR = isServerless ? path.join("/tmp", ".data") : path.join(process.c
 const STORAGE_DIR = path.join(DATA_DIR, "chunks");
 const DB_FILE = path.join(DATA_DIR, "db.json");
 
-// MongoDB connection cache
+declare global {
+  var _mongoClientPromise: Promise<MongoClient> | undefined;
+}
+
+// MongoDB connection cache using official Next.js singleton pattern
 const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_DB_URI;
-let mongoClient: MongoClient | null = null;
+
+function escapeRegExp(string: string): string {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 async function getMongoCollection() {
   if (!MONGO_URI) return null;
   try {
-    if (!mongoClient) {
-      mongoClient = new MongoClient(MONGO_URI);
-      await mongoClient.connect();
+    if (!global._mongoClientPromise) {
+      const client = new MongoClient(MONGO_URI);
+      global._mongoClientPromise = client.connect();
     }
+    const client = await global._mongoClientPromise;
     const dbName = process.env.MONGO_DB_NAME || "anubox";
-    return mongoClient.db(dbName).collection<FileRecord>("files");
+    return client.db(dbName).collection<FileRecord>("files");
   } catch (err) {
     console.error("MongoDB connection error:", err);
+    global._mongoClientPromise = undefined; // Reset on failure to allow retry
     return null;
   }
 }
@@ -102,17 +111,19 @@ export async function addFileRecord(record: FileRecord): Promise<void> {
 }
 
 export async function getFileRecord(id: string): Promise<FileRecord | undefined> {
-  const baseId = id.split(".")[0];
+  if (!id || typeof id !== "string") return undefined;
+  const cleanId = id.replace(/[\/\\]/g, "");
+  const baseId = cleanId.split(".")[0];
+  const safeBaseId = escapeRegExp(baseId);
+
   const col = await getMongoCollection();
   if (col) {
     try {
-      const rec = await col.findOne({
-        $or: [
-          { id: id },
-          { id: { $regex: `^${baseId}(\\..*)?$` } },
-          { filename: id },
-        ],
-      });
+      const orClauses: any[] = [{ id: cleanId }, { filename: cleanId }];
+      if (safeBaseId.length > 0) {
+        orClauses.push({ id: { $regex: `^${safeBaseId}(\\..*)?$` } });
+      }
+      const rec = await col.findOne({ $or: orClauses });
       if (rec) return rec as FileRecord;
     } catch (err) {
       console.error("MongoDB lookup error:", err);
@@ -122,10 +133,10 @@ export async function getFileRecord(id: string): Promise<FileRecord | undefined>
   const db = getDb();
   return db.find(
     (r) =>
-      r.id === id ||
-      r.id === `${id}` ||
-      r.id.split(".")[0] === baseId ||
-      r.filename === id
+      r.id === cleanId ||
+      r.id === `${cleanId}` ||
+      (safeBaseId.length > 0 && r.id.split(".")[0] === baseId) ||
+      r.filename === cleanId
   );
 }
 
@@ -143,17 +154,20 @@ export async function getDbRecords(): Promise<FileRecord[]> {
 }
 
 export async function deleteFileRecord(id: string): Promise<boolean> {
-  const baseId = id.split(".")[0];
+  if (!id || typeof id !== "string") return false;
+  const cleanId = id.replace(/[\/\\]/g, "");
+  const baseId = cleanId.split(".")[0];
+  const safeBaseId = escapeRegExp(baseId);
+
   let deleted = false;
   const col = await getMongoCollection();
   if (col) {
     try {
-      const res = await col.deleteOne({
-        $or: [
-          { id: id },
-          { id: { $regex: `^${baseId}(\\..*)?$` } },
-        ],
-      });
+      const orClauses: any[] = [{ id: cleanId }];
+      if (safeBaseId.length > 0) {
+        orClauses.push({ id: { $regex: `^${safeBaseId}(\\..*)?$` } });
+      }
+      const res = await col.deleteOne({ $or: orClauses });
       if (res.deletedCount && res.deletedCount > 0) {
         deleted = true;
       }
@@ -163,7 +177,9 @@ export async function deleteFileRecord(id: string): Promise<boolean> {
   }
 
   const db = getDb();
-  const file = db.find((r) => r.id === id || r.id.split(".")[0] === baseId);
+  const file = db.find(
+    (r) => r.id === cleanId || (safeBaseId.length > 0 && r.id.split(".")[0] === baseId)
+  );
   if (file) {
     // Clean local chunks if present
     for (const c of file.chunks) {
@@ -174,7 +190,9 @@ export async function deleteFileRecord(id: string): Promise<boolean> {
         } catch {}
       }
     }
-    const filtered = db.filter((r) => r.id !== id && r.id.split(".")[0] !== baseId);
+    const filtered = db.filter(
+      (r) => r.id !== cleanId && (safeBaseId.length === 0 || r.id.split(".")[0] !== baseId)
+    );
     saveDb(filtered);
     deleted = true;
   }
@@ -331,29 +349,5 @@ export function removeTempChunk(uploadId: string, index: number) {
   inFlightChunks.delete(`${uploadId}-${index}`);
 }
 
-// Admin Auth Helper
-export function checkAdminAuth(req: Request): boolean {
-  const adminUser = process.env.ADMIN_USERNAME || process.env.USERNAME || "admin";
-  const adminPass = process.env.ADMIN_PASSWORD || process.env.PASSWORD || "admin123";
-
-  // Check Cookie
-  const cookieHeader = req.headers.get("cookie") || "";
-  if (cookieHeader.includes("anubox_session=authenticated")) {
-    return true;
-  }
-
-  // Check Basic Auth
-  const authHeader = req.headers.get("authorization");
-  if (authHeader && authHeader.startsWith("Basic ")) {
-    try {
-      const b64 = authHeader.slice(6);
-      const decoded = Buffer.from(b64, "base64").toString("utf-8");
-      const [u, p] = decoded.split(":");
-      if (u === adminUser && p === adminPass) {
-        return true;
-      }
-    } catch {}
-  }
-
-  return false;
-}
+// Re-export secure admin authentication helper
+export { checkAdminAuth } from "./auth";

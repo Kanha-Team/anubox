@@ -48,30 +48,42 @@ export async function POST(req: NextRequest) {
   let totalSize = 0;
 
   for (let i = 0; i < chunks.length; i++) {
-    const chunkInfo = chunks[i];
-    const temp = getTempChunk(uploadId, i);
-    if (!temp) {
-      return NextResponse.json(
-        { error: `Missing chunk at index ${i}` },
-        { status: 400 }
-      );
+    const chunkInfo = chunks[i] || {};
+    let iv = chunkInfo.iv;
+    let tag = chunkInfo.tag;
+    let telegramFileId = chunkInfo.telegramFileId;
+    let chunkSize = Number(chunkInfo.size) || 0;
+    let hash = chunkInfo.hash || "";
+
+    // If chunk was not already encrypted/persisted by upload/chunk, use in-memory temp chunk
+    if (!iv || !tag) {
+      const temp = getTempChunk(uploadId, i);
+      if (!temp) {
+        return NextResponse.json(
+          { error: `Missing chunk at index ${i}` },
+          { status: 400 }
+        );
+      }
+      const saved = await saveChunk(temp.buffer, `${uploadId}-${i}`);
+      iv = saved.iv;
+      tag = saved.tag;
+      telegramFileId = saved.telegramFileId;
+      chunkSize = temp.buffer.length;
+      hash = temp.hash;
     }
 
-    const { iv, tag, telegramFileId } = await saveChunk(
-      temp.buffer,
-      `${uploadId}-${i}`
-    );
+    removeTempChunk(uploadId, i);
+
     savedChunks.push({
       id: `${uploadId}-${i}`,
       index: i,
-      size: temp.buffer.length,
-      hash: temp.hash,
+      size: chunkSize,
+      hash,
       telegramFileId,
       iv,
       tag,
     });
-    totalSize += temp.buffer.length;
-    removeTempChunk(uploadId, i);
+    totalSize += chunkSize;
   }
 
   const ext = getFileExt(name) || "bin";
