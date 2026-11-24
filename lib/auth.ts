@@ -1,13 +1,25 @@
 import * as crypto from "crypto";
 
-// Secret for HMAC signing of session tokens
-const KEY_SECRET =
-  process.env.ADMIN_SESSION_SECRET ||
-  process.env.ENCRYPTION_KEY ||
-  process.env.ADMIN_PASSWORD ||
-  "anubox_master_session_key_2026_xyz";
+declare global {
+  var _anuboxHmacKey: Buffer | undefined;
+}
 
-const SESSION_HMAC_KEY = crypto.createHash("sha256").update(KEY_SECRET).digest();
+/**
+ * Derives a secure HMAC key from environment variables.
+ * If no secret is configured, dynamically generates a secure random 32-byte secret
+ * so that no static secret is ever exposed in public repositories.
+ */
+function getSessionHmacKey(): Buffer {
+  if (global._anuboxHmacKey) return global._anuboxHmacKey;
+  const envSecret =
+    process.env.ADMIN_SESSION_SECRET ||
+    process.env.ENCRYPTION_KEY ||
+    process.env.ADMIN_PASSWORD;
+
+  const secret = envSecret || crypto.randomBytes(32).toString("hex");
+  global._anuboxHmacKey = crypto.createHash("sha256").update(secret).digest();
+  return global._anuboxHmacKey;
+}
 
 export interface SessionPayload {
   u: string; // username
@@ -16,17 +28,25 @@ export interface SessionPayload {
   nonce: string; // random nonce
 }
 
-export function getAdminCredentials() {
-  const adminUser = process.env.ADMIN_USERNAME || process.env.USERNAME || "admin";
-  const adminPass = process.env.ADMIN_PASSWORD || process.env.PASSWORD || "admin123";
-  return { adminUser, adminPass };
+/**
+ * Reads admin credentials strictly from environment variables.
+ * NO HARDCODED PASSWORDS — completely safe for public repositories.
+ */
+export function getAdminCredentials(): { adminUser?: string; adminPass?: string } {
+  const adminUser = (process.env.ADMIN_USERNAME || process.env.USERNAME || "").trim();
+  const adminPass = process.env.ADMIN_PASSWORD || process.env.PASSWORD || "";
+  return {
+    adminUser: adminUser.length > 0 ? adminUser : undefined,
+    adminPass: adminPass.length > 0 ? adminPass : undefined,
+  };
 }
 
 /**
  * Constant-time string comparison to prevent timing attacks
  */
-export function safeCompare(a: string, b: string): boolean {
+export function safeCompare(a: string | undefined, b: string | undefined): boolean {
   if (typeof a !== "string" || typeof b !== "string") return false;
+  if (a.length === 0 || b.length === 0) return false;
   const hashA = crypto.createHash("sha256").update(a).digest();
   const hashB = crypto.createHash("sha256").update(b).digest();
   return crypto.timingSafeEqual(hashA, hashB);
@@ -47,7 +67,8 @@ export function createSessionToken(username: string): string {
 
   const payloadB64 = Buffer.from(JSON.stringify(payload)).toString("base64url");
   const dataToSign = `v1.${payloadB64}`;
-  const sig = crypto.createHmac("sha256", SESSION_HMAC_KEY).update(dataToSign).digest("hex");
+  const hmacKey = getSessionHmacKey();
+  const sig = crypto.createHmac("sha256", hmacKey).update(dataToSign).digest("hex");
 
   return `${dataToSign}.${sig}`;
 }
@@ -70,7 +91,8 @@ export function verifySessionToken(token: string | null | undefined): {
 
   const [, payloadB64, sigHex] = parts;
   const dataToSign = `v1.${payloadB64}`;
-  const expectedSig = crypto.createHmac("sha256", SESSION_HMAC_KEY).update(dataToSign).digest("hex");
+  const hmacKey = getSessionHmacKey();
+  const expectedSig = crypto.createHmac("sha256", hmacKey).update(dataToSign).digest("hex");
 
   // Constant-time check on signature
   const sigBuf = Buffer.from(sigHex, "utf-8");
@@ -90,7 +112,7 @@ export function verifySessionToken(token: string | null | undefined): {
 
     // Verify username matches current admin username
     const { adminUser } = getAdminCredentials();
-    if (!safeCompare(payload.u, adminUser)) {
+    if (!adminUser || !safeCompare(payload.u, adminUser)) {
       return { valid: false };
     }
 
@@ -136,7 +158,7 @@ export function checkAdminAuth(req: Request): boolean {
         const u = decoded.slice(0, colonIndex);
         const p = decoded.slice(colonIndex + 1);
         const { adminUser, adminPass } = getAdminCredentials();
-        if (safeCompare(u, adminUser) && safeCompare(p, adminPass)) {
+        if (adminUser && adminPass && safeCompare(u, adminUser) && safeCompare(p, adminPass)) {
           return true;
         }
       }

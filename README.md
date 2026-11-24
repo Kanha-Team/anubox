@@ -57,8 +57,8 @@ cp .env.example .env
 | `MAX_SIZE_MB` | Maximum allowed upload size in MB | `100` |
 | `ENABLE_AUTH` | Require admin auth for all uploads | `false` |
 | `ENCRYPTION_KEY` | Master key for AES-256-GCM encryption | auto-generated |
-| `ADMIN_USERNAME` | Username for `/admin` | `admin` |
-| `ADMIN_PASSWORD` | Password for `/admin` | `admin123` |
+| `ADMIN_USERNAME` | Username for `/admin` | *(required for admin access)* |
+| `ADMIN_PASSWORD` | Password for `/admin` | *(required for admin access)* |
 | `BOT_TOKEN` | Telegram Bot API token | *(optional)* |
 | `BOT_CHAT_ID` | Telegram chat ID for storage | *(optional)* |
 

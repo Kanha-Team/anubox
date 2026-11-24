@@ -48,6 +48,18 @@ export async function POST(req: NextRequest) {
   }
 
   const { adminUser, adminPass } = getAdminCredentials();
+  if (!adminUser || !adminPass) {
+    return NextResponse.json(
+      { error: "Admin login is disabled. Please configure ADMIN_USERNAME and ADMIN_PASSWORD in environment variables." },
+      {
+        status: 503,
+        headers: {
+          "x-powered-by": "AnuBox File Hosting",
+          "x-api-version": "4.0",
+        },
+      }
+    );
+  }
 
   // Constant-time credential check to prevent timing attacks
   if (safeCompare(username.trim(), adminUser) && safeCompare(password, adminPass)) {

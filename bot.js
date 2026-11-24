@@ -77,9 +77,11 @@ async function pollUpdates() {
   setImmediate(pollUpdates);
 }
 
-const ADMIN_USER = process.env.ADMIN_USERNAME || process.env.USERNAME || "admin";
-const ADMIN_PASS = process.env.ADMIN_PASSWORD || process.env.PASSWORD || "admin123";
-const AUTH_HEADER = "Basic " + Buffer.from(`${ADMIN_USER}:${ADMIN_PASS}`).toString("base64");
+const ADMIN_USER = process.env.ADMIN_USERNAME || process.env.USERNAME;
+const ADMIN_PASS = process.env.ADMIN_PASSWORD || process.env.PASSWORD;
+const AUTH_HEADER = (ADMIN_USER && ADMIN_PASS)
+  ? "Basic " + Buffer.from(`${ADMIN_USER}:${ADMIN_PASS}`).toString("base64")
+  : undefined;
 
 async function handleMessage(msg) {
   const chatId = msg.chat.id;

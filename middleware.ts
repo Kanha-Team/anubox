@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const KEY_SECRET =
+const envSecret =
   process.env.ADMIN_SESSION_SECRET ||
   process.env.ENCRYPTION_KEY ||
-  process.env.ADMIN_PASSWORD ||
-  "anubox_master_session_key_2026_xyz";
+  process.env.ADMIN_PASSWORD;
 
 let cachedKey: CryptoKey | null = null;
 
 async function getHmacKey(): Promise<CryptoKey> {
   if (cachedKey) return cachedKey;
   const encoder = new TextEncoder();
-  const secretBytes = encoder.encode(KEY_SECRET);
+  const secretBytes = encoder.encode(envSecret || "anubox_runtime_fallback_secret");
   const keyDigest = await crypto.subtle.digest("SHA-256", secretBytes);
   cachedKey = await crypto.subtle.importKey(
     "raw",
@@ -49,8 +48,8 @@ async function verifyEdgeToken(token: string | undefined): Promise<boolean> {
       return false;
     }
 
-    const validAdminUser = process.env.ADMIN_USERNAME || process.env.USERNAME || "admin";
-    if (payload.u !== validAdminUser) {
+    const validAdminUser = process.env.ADMIN_USERNAME || process.env.USERNAME;
+    if (!validAdminUser || payload.u !== validAdminUser) {
       return false;
     }
 
@@ -66,8 +65,9 @@ function verifyBasicAuth(authHeader: string | null): boolean {
     const b64 = authHeader.slice(6);
     const decoded = atob(b64);
     const [u, p] = decoded.split(":");
-    const validUser = process.env.ADMIN_USERNAME || process.env.USERNAME || "admin";
-    const validPass = process.env.ADMIN_PASSWORD || process.env.PASSWORD || "admin123";
+    const validUser = process.env.ADMIN_USERNAME || process.env.USERNAME;
+    const validPass = process.env.ADMIN_PASSWORD || process.env.PASSWORD;
+    if (!validUser || !validPass) return false;
     return u === validUser && p === validPass;
   } catch {
     return false;

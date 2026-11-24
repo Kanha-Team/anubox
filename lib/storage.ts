@@ -201,12 +201,24 @@ export async function deleteFileRecord(id: string): Promise<boolean> {
 }
 
 // AES-256-GCM Encryption
-const KEY_SECRET = process.env.ENCRYPTION_KEY || "anubox_secret_master_encryption_key_2026_xyz";
-const CIPHER_KEY = crypto.createHash("sha256").update(KEY_SECRET).digest();
+declare global {
+  var _anuboxCipherKey: Buffer | undefined;
+}
+
+function getCipherKey(): Buffer {
+  if (global._anuboxCipherKey) return global._anuboxCipherKey;
+  const envSecret =
+    process.env.ENCRYPTION_KEY ||
+    process.env.ADMIN_SESSION_SECRET ||
+    process.env.ADMIN_PASSWORD;
+  const secret = envSecret || crypto.randomBytes(32).toString("hex");
+  global._anuboxCipherKey = crypto.createHash("sha256").update(secret).digest();
+  return global._anuboxCipherKey;
+}
 
 export function encryptBuffer(buffer: Buffer): { encrypted: Buffer; iv: string; tag: string } {
   const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv("aes-256-gcm", CIPHER_KEY, iv);
+  const cipher = crypto.createCipheriv("aes-256-gcm", getCipherKey(), iv);
   const encrypted = Buffer.concat([cipher.update(buffer), cipher.final()]);
   const tag = cipher.getAuthTag();
   return {
@@ -219,7 +231,7 @@ export function encryptBuffer(buffer: Buffer): { encrypted: Buffer; iv: string; 
 export function decryptBuffer(encrypted: Buffer, ivHex: string, tagHex: string): Buffer {
   const iv = Buffer.from(ivHex, "hex");
   const tag = Buffer.from(tagHex, "hex");
-  const decipher = crypto.createDecipheriv("aes-256-gcm", CIPHER_KEY, iv);
+  const decipher = crypto.createDecipheriv("aes-256-gcm", getCipherKey(), iv);
   decipher.setAuthTag(tag);
   return Buffer.concat([decipher.update(encrypted), decipher.final()]);
 }
